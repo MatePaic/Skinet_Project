@@ -55,7 +55,6 @@ namespace API.Controllers
         {
             //var email = User.FindFirstValue(ClaimTypes.Email);
             //var email = HttpContext.User?.Claims?.FirstOrDefault(x => x.Type == ClaimTypes.Email)?.Value;
-
             var user = await _userManager.FindByUserByClaimsPrincipleWithAddressAsync(User);
 
             return _mapper.Map<Address, AddressDto>(user.Address);
@@ -89,7 +88,7 @@ namespace API.Controllers
 
             return new UserDto
             {
-                Email = loginDto.Email,
+                Email = user.Email,
                 DisplayName = user.DisplayName,
                 Token = _tokenService.CreateToken(user)
             };
@@ -98,10 +97,15 @@ namespace API.Controllers
         [HttpPost("register")]
         public async Task<ActionResult<UserDto>> Register (RegisterDto registerDto)
         {
+            if(CheckEmailExistsAsync(registerDto.Email).Result.Value)
+            {
+                return new BadRequestObjectResult(new ApiValidationErrorResponse { Errors = new[] { "Email address is in use" } });
+            }
+
             var user = new AppUser
             {
-                DisplayName = registerDto.DisplayName,
                 Email = registerDto.Email,
+                DisplayName = registerDto.DisplayName,
                 UserName = registerDto.Email
             };
 
